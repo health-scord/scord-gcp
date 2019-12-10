@@ -1,5 +1,5 @@
 {
-  "name": "backend2",
+  "name": "fitbitAuthRoutes",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -17,7 +17,11 @@
     "@google-cloud/debug-agent": "^4.0.0",
     "escape-html": "^1.0.3",
     "pug": "^2.0.3",
-    "supertest": "^4.0.2"
+    "supertest": "^4.0.2",
+    "fitbit-node": "^2.2.0",
+    "express": "^4.16.4",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
   },
   "devDependencies": {
     "@google-cloud/functions-framework": "^1.1.1",
