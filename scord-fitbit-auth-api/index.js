@@ -11,16 +11,14 @@ const client = new FitbitApiClient({
   apiVersion: "1.2" // 1.2 is the default
 });
 
-const serverIP = "68.183.100.145";
 
-const apiUrl = `https://us-central1-scord-260818.cloudfunctions.net/scord-user-api-test/`;
+const scordUsersApiUrl = `https://us-central1-scord-260818.cloudfunctions.net/scord-user-api-test`;
+const scordFitbitAuthApiUrl = `https://us-central1-scord-260818.cloudfunctions.net/scord-fitbit-auth-api`
 
-let globalScopeId;
 
 // redirect the user to the Fitbit authorization page
 app.get("/accounts/:id/authorize", async (req, res) => {
   try {
-    globalScopeId = req.params.id;
     console.log("in authorize route");
 
 
@@ -31,11 +29,15 @@ app.get("/accounts/:id/authorize", async (req, res) => {
     if (isAccountAuthorized) {
       return;
     } else {
-      let url = await client.getAuthorizeUrl(
+      let redirectUrl = await client.getAuthorizeUrl(
         "activity heartrate location nutrition profile settings sleep social weight",
-        `${apiUrl}/authorizeCallback`
+        `${scordFitbitAuthApiUrl}/authorizeCallback`,
+        undefined,
+        req.params.id
       );
-      return res.redirect(url);
+      console.log('RIGHT HERE')
+      console.log(redirectUrl)
+      return res.redirect(redirectUrl);
     }
   } catch (error) {
     console.log(error);
@@ -47,10 +49,13 @@ app.get("/authorizeCallback", async (req, res) => {
   // exchange the authorization code we just received for an access token
   console.log("in authorizeCallback route");
 
+  console.log(req.query.state)
+
   let accessTokenResult = await client.getAccessToken(
     req.query.code,
-    callbackUrl
+    `${scordFitbitAuthApiUrl}/authorizeCallback`
   );
+
   let profileDetails = await client.get(
     "/profile.json",
     accessTokenResult.access_token
@@ -60,20 +65,17 @@ app.get("/authorizeCallback", async (req, res) => {
   let refreshToken = accessTokenResult.refresh_token;
   let deviceUserId = accessTokenResult.user_id;
 
-  console.log(deviceUserId);
-  console.log(accessToken);
-  console.log(refreshToken);
 
-  console.log(`saving access token for id to dataservice /accounts route`);
 
-  console.log(globalScopeId);
+  //console.log(`saving access token for id to dataservice /accounts route`);
+
 
   //post this to dataService
   let options = {
-    uri: `${apiUrl}/accounts/${globalScopeId}`,
+    uri: `${scordUsersApiUrl}/accounts/${req.query.state}`,
     method: "PATCH",
     body: {
-      id: globalScopeId,
+      id: req.query.state,
       devices: [
         {
           make: "fitbit",
@@ -87,12 +89,17 @@ app.get("/authorizeCallback", async (req, res) => {
     json: true
   };
 
+  console.log(options)
+
   try {
     await rp(options);
-    return res.redirect(`http://${serverIP}:5000/accounts`);
+    //return to home screen of app
+    //return res.redirect(`http://${serverIP}:5000/accounts`);
   } catch (error) {
+    console.log(`oops an error"`)
     console.log(error);
-    return res.redirect(`http://${serverIP}:5000/accounts`);
+    //return to home screen of app
+    //return res.redirect(`http://${serverIP}:5000/accounts`);
   }
 });
 
