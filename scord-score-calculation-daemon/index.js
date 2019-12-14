@@ -8,8 +8,10 @@ const dataServiceClient = new DataServiceClient(config);
 const fitnessDeviceClient = new FitnessDeviceClient(config);
 const healthScoreServiceClient = new HealthScoreServiceClient(config);
 
-const app = async () => {
+const app = async (req, res) => {
   try {
+
+    res.status(200).send('Success')
     console.log("generating health score for all accounts");
     console.log(config)
     let accounts = await dataServiceClient.getAccounts();

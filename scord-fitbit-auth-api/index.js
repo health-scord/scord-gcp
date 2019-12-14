@@ -94,12 +94,12 @@ app.get("/authorizeCallback", async (req, res) => {
   try {
     await rp(options);
     //return to home screen of app
-    //return res.redirect(`http://${serverIP}:5000/accounts`);
+    return res.redirect(`scord://test`);
   } catch (error) {
     console.log(`oops an error"`)
     console.log(error);
     //return to home screen of app
-    //return res.redirect(`http://${serverIP}:5000/accounts`);
+    return res.redirect(`scord://test`);
   }
 });
 
