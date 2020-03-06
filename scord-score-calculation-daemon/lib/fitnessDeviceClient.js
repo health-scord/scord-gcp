@@ -3,10 +3,12 @@ const rp = require("request-promise");
 const FitbitApiClient = require("fitbit-node");
 const express = require("express");
 const moment = require("moment");
+const DataServiceClient = require("./dataServiceClient.js");
+
 
 const apiPath = {
   sleep: "/sleep/",
-  activity: "/activities/tracker/minutesVeryActive/",
+  activity: "/activities/tracker/minutesFairlyActive/",
   heart: "/activities/heart/"
 };
 
@@ -15,6 +17,8 @@ class fitnessDeviceClient {
     this.options = options;
     this.name = `fitnessDeviceClient`;
     console.log(`${this.name} is operational`);
+
+    this.dataServiceClient = new DataServiceClient(options);
 
     this.fitbitClient = new FitbitApiClient({
       clientId: "22DPF6",
@@ -40,8 +44,8 @@ class fitnessDeviceClient {
       ]);
 
       let averageDailySleep = calculateAverageDailySleep(sleepData.sleep);
-      let averageDailyActivity = calculateAverageDailyActivity(
-        activityData["activities-tracker-minutesLightlyActive"]
+      let averageWeeklyActivity = calculateAverageWeeklyActivity(
+        activityData["activities-tracker-minutesFairlyActive"]
       );
       let restingHeartRate = calculateRestingHeartRate(
         heartRateData["activities-heart"]
@@ -49,13 +53,39 @@ class fitnessDeviceClient {
 
       return {
         averageDailySleep,
-        averageDailyActivity,
+        averageWeeklyActivity,
         restingHeartRate
       };
     } catch (error) {
       return Promise.reject(error);
     }
   }
+
+  async accessTokenCheck(account){
+    try{
+
+      let token = account.devices[0].accessToken;
+
+      let tokenValidResults = await this.fitbitClient.get(
+        `/profile.json`,
+        token,
+      );
+
+      if (tokenValidResults[0].hasOwnProperty('errors') && tokenValidResults[0].errors[0].errorType == 'invalid_token'){
+        console.log('Invalid token, refreshing...')
+        let results = await this.fitbitClient.refreshAccessToken(account.devices[0].accessToken, account.devices[0].refreshToken, 28900) 
+ 
+        await this.dataServiceClient.updateAccessToken(account, results.access_token, results.refresh_token)     
+        return true
+      } else {
+        return false
+      }
+    } catch (err){
+      return Promise.reject(err)
+    }
+  }
+
+  
 }
 
 module.exports = fitnessDeviceClient;
@@ -74,7 +104,9 @@ let retrieveData = async (
       `${apiPath[dataType]}date/${startDate}/${endDate}.json`,
       token
     );
-    return response[0];
+
+    return response[0];  
+
   } catch (error) {
     console.log(error);
     return Promise.reject(error);
@@ -112,17 +144,17 @@ const calculateAverageDailySleep = sleepData => {
     totalSleep = totalSleep + totalSleepOnDate;
   }
 
-  return parseFloat(totalSleep / uniqueDates.length).toFixed(2);
+  return parseFloat((totalSleep/60) / uniqueDates.length).toFixed(2);
 };
 
-const calculateAverageDailyActivity = activityData => {
+const calculateAverageWeeklyActivity = activityData => {
   let totalActiveMinutes = 0;
 
   for (let date of activityData) {
     totalActiveMinutes = totalActiveMinutes + parseInt(date.value);
   }
 
-  return parseFloat(totalActiveMinutes / activityData.length).toFixed(2);
+  return (parseFloat(totalActiveMinutes / activityData.length).toFixed(2))*7;
 };
 
 const calculateRestingHeartRate = heartData => {

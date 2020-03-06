@@ -37,14 +37,34 @@ class dataServiceClient {
 
   async updateHealthScore(account, healthScore) {
     try {
-      console.log("posting health score >>>>>");
       let options = {
         uri: `${this.endpoint}/accounts/${account.id}`,
         method: "PATCH",
         body: {
-          healthScore: {
-            calculated: healthScore
-          }
+          healthScore
+        },
+        json: true
+      };
+
+      return await rp(options);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  async updateAccessToken(account, accessToken, refreshToken) {
+    try {
+      console.log("updating accessToken");
+      let options = {
+        uri: `${this.endpoint}/accounts/${account.id}`,
+        method: "PATCH",
+        body: {
+          devices: [
+            {
+              accessToken,
+              refreshToken
+            }
+          ]
         },
         json: true
       };

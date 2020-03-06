@@ -12,5 +12,5 @@ https://cloud.google.com/sdk/docs
 ## deployment 
 
     cd /<function_directory> 
-    gcloud functions deploy <function_name> --trigger-http --runtime=nodejs10
+    gcloud functions deploy <function_name> --entry-point app --trigger-http --runtime=nodejs10
 

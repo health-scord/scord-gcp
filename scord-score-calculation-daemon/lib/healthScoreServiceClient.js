@@ -1,28 +1,5 @@
 const Promise = require("bluebird");
 
-// class healthScoreServiceClient {
-//   constructor(options) {
-//     this.options = options;
-//     this.name = `dataServiceClient`;
-//     console.log(`${this.name} is operational`);
-//   }
-
-//   async calculateHealthScore(data) {
-//     try {
-//       await Promise.delay(1000);
-
-//       let max = 1000;
-//       let min = 500;
-//       let healthScore = Math.floor(Math.random() * (max - min + 1) + min);
-
-//       return Promise.resolve(healthScore);
-//     } catch (error) {
-//       console.log(error);
-//       return Promise.reject(error);
-//     }
-//   }
-// }
-
 class healthScoreServiceClient {
   constructor(options) {
     this.options = options;
@@ -32,21 +9,29 @@ class healthScoreServiceClient {
 
   async calculateHealthScore(data) {
     try {
-      console.log(data);
+
       const heartScore = calculateHeartScore(data.restingHeartRate);
       const sleepScore = calculateSleepScore(data.averageDailySleep);
-      const activityScore = calculateActivityScore(data.averageDailyActivity);
+      const activityScore = calculateActivityScore(data.averageWeeklyActivity);
 
-      console.log(`heartScore is: ${heartScore}`);
-      console.log(`sleepScore is: ${sleepScore}`);
-      console.log(`activityScore is: ${activityScore}`);
+      const totalScore = (heartScore + sleepScore + activityScore)/3
 
-      let healthScore = heartScore + sleepScore + activityScore;
-
-      console.log(`healthScore is: ${healthScore}`);
+      const healthScore = {
+        calculated: Math.round(totalScore),
+        components: {
+            sleep: {
+                averageDailySleepHours: data.averageDailySleep
+            },
+            fitness: {
+                averageDailyRigorousActivityMinutes: data.averageWeeklyActivity/7,
+            },
+            heartRate: {
+                averageRestingHeartRate: data.restingHeartRate
+            }
+        }
+    };
 
       return Promise.resolve(healthScore);
-      //return Promise.resolve(800);
     } catch (error) {
       console.log(error);
       return Promise.reject(error);
@@ -63,23 +48,29 @@ const calculateHeartScore = restingHeartRate => {
     restingHeartRate = 40;
   }
 
-  const heartScore =
-    100 - Math.floor(Math.abs(restingHeartRate - 40) / 100) * 100 + 100;
+
+  let heartScore
+
+  if (restingHeartRate < 51) {
+    heartScore = 100 
+  } else {
+    heartScore = 100 - (Math.abs(restingHeartRate - 50) / 50)*100
+  }
 
   return heartScore;
 };
 
-const calculateActivityScore = averageDailyActivity => {
-  if (averageDailyActivity > 300) {
-    averageDailyActivity = 300;
+const calculateActivityScore = averageWeeklyActivity => {
+  if (averageWeeklyActivity > 300) {
+    averageWeeklyActivity = 300;
   }
 
-  if (averageDailyActivity < 150) {
-    averageDailyActivity = 150;
+  if (averageWeeklyActivity < 150) {
+    averageWeeklyActivity = 150;
   }
 
   const activityScore =
-    150 - Math.floor(Math.abs(averageDailyActivity - 300) / 150) * 100 + 150;
+    100 - (Math.abs(averageWeeklyActivity - 300) / 300) * 100;
   return activityScore;
 };
 
@@ -90,11 +81,11 @@ const calculateSleepScore = averageDailySleep => {
     sleepScore = 300;
   } else if (averageDailySleep < 7) {
     sleepScore = Math.floor(
-      200 - (Math.abs(7 - averageDailySleep) / 7) * 200 + 100
+      100 - (Math.abs(7 - averageDailySleep) / 7) * 100
     );
   } else if (averageDailySleep > 9) {
     sleepScore = Math.floor(
-      200 - (Math.abs(9 - averageDailySleep) / 7) * 200 + 100
+      100 - (Math.abs(9 - averageDailySleep) / 7) * 100
     );
   }
 
