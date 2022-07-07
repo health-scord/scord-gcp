@@ -23,7 +23,7 @@
     "express": "^4.16.4",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
-    "moment": "^2.24.0"
+    "moment": "^2.29.4"
   },
   "devDependencies": {
     "@google-cloud/functions-framework": "^1.1.1",
